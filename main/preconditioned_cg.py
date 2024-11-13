@@ -2,6 +2,7 @@ import numpy as np
 from typing import Tuple
 from scipy import sparse
 from scipy.sparse.linalg import spilu
+from scipy.sparse.linalg import spsolve
 
 def pcg(A: np.ndarray,
         b: np.ndarray, 
@@ -34,6 +35,10 @@ def pcg(A: np.ndarray,
         Ap = A @ p
         ry = r @ y
         pAp = p @ Ap
+        eps = 1e-8
+        if abs(pAp) < eps:  # Check for near-zero denominator
+            print(f"Warning: Small pAp encountered at iteration {i}")
+            break
         optim_step_size = ry / pAp
         
         x = x + optim_step_size * p 
@@ -62,28 +67,19 @@ def jacobi_preconditioner(A: np.ndarray) -> np.ndarray:
     return np.diag(np.diag(A))
 
 def ssor_preconditioner(A: np.ndarray, omega: float = 1.0) -> np.ndarray:
-    """
-    Symmetric Successive Over-Relaxation (SSOR) preconditioner
-    
-    Args:
-        A: System matrix
-        omega: Relaxation parameter (0 < omega < 2)
-    """
+
     D = np.diag(np.diag(A))
     L = np.tril(A, k=-1)
     
     D_inv = np.diag(1.0 / np.diag(A))
+    #add regu to avoid division by 0
+    eps = 1e-8 
+
     M = (1 / (2 - omega)) * (D/omega + L) @ D_inv @ (D/omega + L.T)
     return M
 
 def block_jacobi_preconditioner(A: np.ndarray, block_size: int = 4) -> np.ndarray:
-    """
-    Block Jacobi preconditioner
-    
-    Args:
-        A: System matrix
-        block_size: Size of diagonal blocks
-    """
+
     n = A.shape[0]
     M = np.zeros_like(A)
     
