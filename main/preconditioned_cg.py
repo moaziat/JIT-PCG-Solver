@@ -1,5 +1,7 @@
 import numpy as np 
 from typing import Tuple
+from scipy import sparse
+from scipy.sparse.linalg import spilu
 
 def pcg(A: np.ndarray,
         b: np.ndarray, 
@@ -59,3 +61,47 @@ def jacobi_preconditioner(A: np.ndarray) -> np.ndarray:
 
     return np.diag(np.diag(A))
 
+def ssor_preconditioner(A: np.ndarray, omega: float = 1.0) -> np.ndarray:
+    """
+    Symmetric Successive Over-Relaxation (SSOR) preconditioner
+    
+    Args:
+        A: System matrix
+        omega: Relaxation parameter (0 < omega < 2)
+    """
+    D = np.diag(np.diag(A))
+    L = np.tril(A, k=-1)
+    
+    D_inv = np.diag(1.0 / np.diag(A))
+    M = (1 / (2 - omega)) * (D/omega + L) @ D_inv @ (D/omega + L.T)
+    return M
+
+def block_jacobi_preconditioner(A: np.ndarray, block_size: int = 4) -> np.ndarray:
+    """
+    Block Jacobi preconditioner
+    
+    Args:
+        A: System matrix
+        block_size: Size of diagonal blocks
+    """
+    n = A.shape[0]
+    M = np.zeros_like(A)
+    
+    for i in range(0, n, block_size):
+        end_idx = min(i + block_size, n)
+        block = A[i:end_idx, i:end_idx]
+        M[i:end_idx, i:end_idx] = block
+        
+    return M
+
+def approximate_inverse_preconditioner(A: np.ndarray, drop_tol: float = 0.1) -> np.ndarray:
+
+    n = A.shape[0]
+    M = np.eye(n)
+    A_sparse = sparse.csr_matrix(A)
+    
+    # Create sparse approximate inverse
+    ilu = spilu(A_sparse, drop_tol=drop_tol)
+    M = ilu.solve(np.eye(n))
+    
+    return M

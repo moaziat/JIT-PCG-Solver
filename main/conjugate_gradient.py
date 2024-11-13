@@ -30,6 +30,7 @@ def conjugate_gradient(A: sparse.csr_matrix, b: np.ndarray, x0: np.ndarray = Non
     #initial residual norm squared
     r_norm_sq = r.dot(r)
 
+    residual_history = [r_initial_norm]
 
     for i in range(max_iter):
         
@@ -50,12 +51,14 @@ def conjugate_gradient(A: sparse.csr_matrix, b: np.ndarray, x0: np.ndarray = Non
         ||r(i)|| <= tol * ||r(0)|| e.g ||r(i)||/||r(0)|| <= tol
         '''
         
-        relative_residual = np.sqrt(r_norm_sq_new) / r_initial_norm
-
-        if relative_residual <= tol: 
-            return x, i, relative_residual
-
-
+        residual_norm = np.sqrt(r_norm_sq_new)
+        residual_history.append(residual_norm)
+        
+        # Check convergence
+        relative_residual = residual_norm / r_initial_norm
+        if relative_residual < tol:
+            return x, residual_history, relative_residual
+        
        
 
         #conjugacy factor        
@@ -67,7 +70,7 @@ def conjugate_gradient(A: sparse.csr_matrix, b: np.ndarray, x0: np.ndarray = Non
         #update for new iter
         r_norm_sq = r_norm_sq_new
 
-    return x, max_iter, relative_residual
+    return x, residual_history, relative_residual
 
 
 
