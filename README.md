@@ -15,4 +15,4 @@ discover some HPC concepts, write in C++.
 
 
 ## NEXT STEP
-- CREATE OUR FIRST SMOL GNN? WHAT CHOICE OF GNN? OPTIMAZING WHAT? NUMBER OF ITERATIONS? CHOICE OF THE PRECONDITIONER? in this case I have to implement more solvers and test different preconditioners!
+- CREATE OUR FIRST SMOL GNN? WHAT CHOICE OF GNN? OPTIMIZING WHAT? NUMBER OF ITERATIONS? CHOICE OF THE PRECONDITIONER? in this case I have to implement more solvers and test different preconditioners!
