@@ -1,0 +1,28 @@
+==================
+PDEs
+================
+- Poisson's equation: d2u/dv2 = f where v = (x1, x2) in a bounded, open domain
+    in R2
+    the equation is to be satisfied only for points that are located at the interior of the domain. 
+    Equally important are the conditions to be satisfied on the boundary of this physical domain
+    Boundary conditions come in three common types: 
+        Dirichlet condition u(x) = phi(x)
+        Neumann condition du/dn = 0 where n is a unit vector that is normal to boundary and directed outwards
+        Cauchy condition du/dn + lambda(x) u(x) = gamma(x)
+        (Neumann condition is a particular case of Cauchy condition)
+
+=== Finite difference methods
+    the finite difference method is based on local approximations of the partial derivatives in a PDE, 
+    which are derived by low order Taylor series expansion.
+
+    ==Finite differnces for 1D problems
+
+    consider 1D equation -d2u/dx2 = f(x) for x in [0, 1], u(0) = u (1) = 0
+    the interval [0, 1] can be discretized uniformly by taking n+2 points
+     xi = i x h, i=0,....,n+1 where h = 1/(n+1) because of the Dirichlet boundary conditions
+        using the centered differnce approximation then: -u(i-1) + 2u(i) - u(i+1) = h**2 f(i)
+    for i = 1 and i = n; we have u(0) = u (n+1) = 0
+    thus for n = 6, the linear system obtained is of the form of Ax = f
+
+
+=== Finite element method (FEM)
