@@ -9,3 +9,7 @@ discover some HPC concepts, write in C++.
 ##### progress
  - Implemented PCG solver for 2D poisson equation
  ![alt text](https://github.com/moaziat/smol-pcg/blob/master/PDEs%20solvers/poisson2D.png?raw=true)
+
+  - Implemented PCG solver for 2D Laplace equation (just for test and comparaisons)
+ ![alt text](https://github.com/moaziat/smol-pcg/blob/master/PDEs%20solvers/Laplace2D.png?raw=true)
+
