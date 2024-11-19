@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from typing import Tuple, List, Dict
 import time 
+from scipy.sparse.linalg import spilu 
 
 
 """
@@ -42,6 +43,23 @@ def poisson2D_matrix(nx: int, ny: int, dx: float, dy: float) -> sparse.csr_matri
 
     return A
 
+def jacobi_preconditioner(A: sparse.csr_matrix) -> sparse.csr_matrix:
+   
+    return sparse.diags(1.0 / A.diagonal(), format='csr')
+
+def SSOR_preconditioner(A: sparse.csr_matrix, omega: float=1.0) -> sparse.csc_matrix: 
+
+    D = sparse.diags(A.diagonal(), format='csr')
+    L = sparse.tril(A, k=-1, format='csr') 
+    D_inv = sparse.diags(1.0/A.diagonal(), format='csr')
+    M = (1.0 / (2.0-omega)) * (D/omega + L) @ D_inv @ (D/omega + L.T)
+    return M
+
+def ilu_preconditioner(A: sparse.csr_matrix, drop_tol: float = 0.01) -> sparse.csr_matrix:
+    ilu = spilu(A, drop_tol=drop_tol)
+    N = A.shape[0]
+    M = sparse.linalg.LinearOperator((N, N), matvec=ilu.solve)
+    return M
 
 def boundary_conditions(p: np.ndarray, ny: int, nx: int) -> np.ndarray: 
 
@@ -52,7 +70,7 @@ def boundary_conditions(p: np.ndarray, ny: int, nx: int) -> np.ndarray:
     return p
 
 def pcg_poisson2D(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix,
-                   ny: int, nx: int, max_iter: int = 1000, tol: float = 1e-10) -> Tuple[np.ndarray, List[float], float]:
+                   ny: int, nx: int, max_iter: int = 20000, tol: float = 1e-10) -> Tuple[np.ndarray, List[float], float]:
     
     #initial guess x0 (here we use x as a notation)
     x = np.zeros(A.shape[0])
@@ -109,15 +127,15 @@ def jacobi_preconditioner(A: sparse.csr_matrix) -> sparse.csr_matrix:
     return sparse.diags(1.0 / diag, format='csr')
 
 
-def solver(nx: int, ny: int, dx:float, dy:float, b: np.ndarray) -> Dict: 
+def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, **precond_kwargs) -> Dict: 
 
 
-    A = poisson2D_matrix(nx, ny, dx, dy)
-    precond_M = jacobi_preconditioner(A)
-    x, hist, solve_time = pcg_poisson2D(A, b, precond_M, nx, ny)
+    
+    M = precond_func(A, **precond_kwargs)
+    x, hist, solve_time = pcg_poisson2D(A, b, M, nx, ny)
     
     results = {}
-    results['PCG (Jacobi)'] = {
+    results = {
         'solution': x.reshape(ny, nx),
         'history': hist,
         'time': solve_time
@@ -125,51 +143,47 @@ def solver(nx: int, ny: int, dx:float, dy:float, b: np.ndarray) -> Dict:
 
     return results
 
-def plot_solver(results: Dict, nx: int, ny: int):
-
-    # Create figure with two subplots side by side
-    fig = plt.figure(figsize=(15, 5))
+def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
+    fig = plt.figure(figsize=(15, 8))
     
-    # Create mesh grid for surface plot
+    # Solution surface plot
+    ax1 = fig.add_subplot(121, projection='3d')
     x = np.linspace(0, 2, nx)
     y = np.linspace(0, 1, ny)
     X, Y = np.meshgrid(x, y)
     
-    # Surface plot
-    ax1 = fig.add_subplot(121, projection='3d')
-    surf = ax1.plot_surface(X, Y, results['PCG (Jacobi)']['solution'], 
-                           cmap='viridis',
-                           edgecolor='none',
-                           alpha=0.8)
-    
-    # Customize surface plot
+    first_method = list(results.keys())[0]
+    surf = ax1.plot_surface(X, Y, results[first_method]['solution'],
+                           cmap='viridis', edgecolor='none', alpha=0.8)
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
     ax1.set_zlabel('Solution')
     ax1.view_init(30, 225)
-    ax1.set_title(f'Solution Surface\nSolve Time: {results["PCG (Jacobi)"]["time"]:.3f}s')
-    
-    # Add colorbar
-    cbar = fig.colorbar(surf, ax=ax1, shrink=0.8, aspect=10)
-    cbar.set_label('Value')
-    
+    ax1.set_title('Solution Surface')
+    fig.colorbar(surf, ax=ax1, shrink=0.8, aspect=10)
+
     # Convergence history plot
     ax2 = fig.add_subplot(122)
-    ax2.semilogy(results['PCG (Jacobi)']['history'], 'b-', linewidth=2, label='PCG (Jacobi)')
+    styles = ['-', '--', ':', '-.']
+    colors = ['b', 'r', 'g', 'm']
+    
+    for (method, data), style, color in zip(results.items(), styles, colors):
+        ax2.semilogy(data['history'], linestyle=style, color=color, linewidth=2,
+                     label=f"{method}\n({len(data['history'])} iter, {data['time']:.3f}s)")
+    
     ax2.set_xlabel('Iteration')
     ax2.set_ylabel('Residual Norm')
-    ax2.set_title(f'Convergence History\n({len(results["PCG (Jacobi)"]["history"])} iterations)')
+    ax2.set_title('Convergence History Comparison')
     ax2.grid(True, which="both", ls="-", alpha=0.2)
     ax2.legend()
     
-    # Adjust layout
     plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
     # Problem setup
     print("Setting up problem...")
-    nx, ny = 50, 50
+    nx, ny = 100, 100
     xmin, xmax = 0, 2
     ymin, ymax = 0, 1
     dx = (xmax - xmin) / (nx - 1)
@@ -181,7 +195,13 @@ if __name__ == "__main__":
     b[3*ny//4 * nx + 3*nx//4] = -100
     
     # Solve with different methods
-    results = solver(nx, ny, dx, dy, b)
+    # Solve with different preconditioners
+    A = poisson2D_matrix(nx, ny, dx, dy)
+    results = {
+        'Jacobi': solver(A, b, nx, ny, jacobi_preconditioner),
+        'SSOR': solver(A, b, nx, ny, SSOR_preconditioner, omega=1.0),
+        'ILU': solver(A, b, nx, ny, ilu_preconditioner, drop_tol=0.01)
+    }
     
     # Plot comparisons
-    plot_solver(results, nx, ny)
+    plot_comparison(results, nx, ny)
