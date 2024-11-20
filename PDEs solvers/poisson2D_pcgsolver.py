@@ -147,20 +147,19 @@ def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
     fig = plt.figure(figsize=(15, 8))
     
     # Solution surface plot
-    ax1 = fig.add_subplot(121, projection='3d')
+    ax1 = fig.add_subplot(121)
     x = np.linspace(0, 2, nx)
     y = np.linspace(0, 1, ny)
     X, Y = np.meshgrid(x, y)
     
     first_method = list(results.keys())[0]
-    surf = ax1.plot_surface(X, Y, results[first_method]['solution'],
-                           cmap='viridis', edgecolor='none', alpha=0.8)
+    cont = ax1.pcolor(X, Y, results[first_method]['solution'],
+                           cmap='viridis')
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
-    ax1.set_zlabel('Solution')
-    ax1.view_init(30, 225)
+
     ax1.set_title('Solution Surface')
-    fig.colorbar(surf, ax=ax1, shrink=0.8, aspect=10)
+    fig.colorbar(cont, ax=ax1)
 
     # Convergence history plot
     ax2 = fig.add_subplot(122)
@@ -183,7 +182,7 @@ def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
 if __name__ == "__main__":
     # Problem setup
     print("Setting up problem...")
-    nx, ny = 100, 100
+    nx, ny = 500, 500
     xmin, xmax = 0, 2
     ymin, ymax = 0, 1
     dx = (xmax - xmin) / (nx - 1)
