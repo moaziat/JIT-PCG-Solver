@@ -27,8 +27,10 @@ def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.
         Ax[i] = row_sum
     return Ax 
 
-def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
 
+@njit(Parallel=True)
+def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
+   
     n = len(A_indptr) - 1
 
     #initial guess
@@ -38,6 +40,7 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
     r = b - matvec_mul(A_value, A_i, A_indptr, x)
 
     #Apply preconditioner
+    
     z = M_data * r
     p = z.copy()
     #initial values
@@ -76,12 +79,11 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
         rz = rz_new
 
       
-
     solve_time = time.time() - start_time
     print(f"solve time: {solve_time} seconds")
     return x, residual_history, solve_time
 
-def sparse_cg(A: sparse.csr_matrix, 
+#def sparse_cg(A: sparse.csr_matrix, 
               b: np.ndarray,
               M: sparse.csr_matrix,
               ny: int, nx: int,
