@@ -1,7 +1,7 @@
 import numpy as np 
 from typing import Tuple, List
 from scipy import sparse
-from numba import jit, njit
+from numba import jit, njit, prange
 import time
 
 @njit(parallel=True)
@@ -20,32 +20,25 @@ def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.
 
     n = len(indptr) - 1
     Ax = np.zeros(n)
-     
-    for i in range(n): 
+    row_sum = 0
+    for i in prange(n): 
         for j in range(indptr[i], indptr[i+1]): 
-            Ax += data[j] * x[indices[j]]
-    return Ax
+            row_sum += data[j] * x[indices[j]]
+        Ax[i] = row_sum
+    return Ax 
 
-@njit(prallel=True)
-def pcg(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix, boundary_mat: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
+def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
 
-    A_value = A.data
-    A_i = A.indices
-    A_indptr = A.indptr 
-
-    M_value = M.value
-    M_i = M.indices
-    M_indptr = M.indptr
-    
+    n = len(A_indptr) - 1
 
     #initial guess
-    x = np.zeros(A.shape[0])
+    x = np.zeros(n)
 
     #initial residual 
     r = b - matvec_mul(A_value, A_i, A_indptr, x)
 
     #Apply preconditioner
-    z = matvec_mul(M_value, M_i, M_indptr, r)
+    z = M_data * r
     p = z.copy()
     #initial values
     rz = dot_product(r, z)
@@ -56,7 +49,7 @@ def pcg(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix, boundary_mat:
     start_time = time.time()
 
     for i in range(max_iter): 
-        x = boundary_mat
+      
 
         Ap = matvec_mul(A_value, A_i, A_indptr, p)
 
@@ -73,7 +66,7 @@ def pcg(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix, boundary_mat:
         if relative_residual < tol: 
             break
 
-        z = matvec_mul(M_value, M_i, M_indptr, r)
+        z = M_data * r
 
 
         #update search direction 
@@ -82,8 +75,23 @@ def pcg(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix, boundary_mat:
         p = z + beta * p 
         rz = rz_new
 
-        x = boundary_mat
+      
 
-    solve_time = time.time() - start_time*
+    solve_time = time.time() - start_time
     print(f"solve time: {solve_time} seconds")
     return x, residual_history, solve_time
+
+def sparse_cg(A: sparse.csr_matrix, 
+              b: np.ndarray,
+              M: sparse.csr_matrix,
+              ny: int, nx: int,
+              max_iter: int = 20000,
+              tol: float = 1e-10) -> tuple:
+   
+
+    return cg(A.data, A.indices, A.indptr,
+             b,
+             M.diagonal(),  # For Jacobi preconditioner, we only need diagonal
+             ny, nx,
+             max_iter,
+             tol)
