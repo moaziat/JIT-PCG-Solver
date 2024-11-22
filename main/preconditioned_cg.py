@@ -52,8 +52,7 @@ def pcg(A: np.ndarray,
         if relative_residual < tol:
             return x, residual_history, True
         
-        y_new = np.linalg.solve(M, r)
-
+        y_new = spsolve(M, r)
         ry_new = r @ y_new
         beta = ry_new / ry
 

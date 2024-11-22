@@ -117,6 +117,7 @@ def pcg_poisson2D(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix,
         x = boundary_conditions(x, ny, nx)
     
     solve_time = time.time() - start_time
+    print("solve time", solve_time)
     return x, residual_history, solve_time
 
 
@@ -181,8 +182,9 @@ def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
 
 if __name__ == "__main__":
     # Problem setup
+    start_time = time.time()
     print("Setting up problem...")
-    nx, ny = 500, 500
+    nx, ny = 300, 300
     xmin, xmax = 0, 2
     ymin, ymax = 0, 1
     dx = (xmax - xmin) / (nx - 1)
@@ -201,6 +203,8 @@ if __name__ == "__main__":
         'SSOR': solver(A, b, nx, ny, SSOR_preconditioner, omega=1.0),
         'ILU': solver(A, b, nx, ny, ilu_preconditioner, drop_tol=0.01)
     }
-    
+    exec_time = time.time() - start_time
     # Plot comparisons
     plot_comparison(results, nx, ny)
+    exec_time = time.time() - start_time
+    print("execution finished in", exec_time)
