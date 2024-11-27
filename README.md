@@ -13,7 +13,7 @@ To clone this repository:
 ```bash
 clone https://github.com/moaziat/JIT-PCG-Solver.git
 ```
-### Dependecies
+### Dependencies
 ```bash
 pip install requirements.txt
 
