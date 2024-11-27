@@ -3,16 +3,17 @@ from typing import Tuple, List
 from scipy import sparse
 from numba import jit, njit, prange
 import time
+from boundary_conditions import poisson2d_bc
 
-@njit
+@njit(parallel=True)
 def dot_product(v1: np.ndarray, v2: np.ndarray) -> int: 
     return np.sum(v1 * v2)
 
-@njit
+@njit(parallel=True)
 def norm(v: np.ndarray) -> int: 
     return np.sqrt(np.sum(v * v))
 
-@njit
+@njit(parallel=True)
 def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.ndarray) -> np.ndarray: 
     '''
     indptr maps the elements of data and indices to the rows of the sparse matrix
@@ -31,13 +32,15 @@ def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.
 
 
 
-@njit
+@njit(parallel=True)
+
 def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
    
     n = len(A_indptr) - 1
 
     #initial guess
     x = np.zeros(n)
+    x = poisson2d_bc(x, nx, ny)
     #initial residual 
     r = b - matvec_mul(A_value, A_i, A_indptr, x)
 
@@ -82,7 +85,7 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
         beta = rz_new / rz 
         p = z + beta * p 
         rz = rz_new
-        
+        x = poisson2d_bc(x, ny, nx)
 
       
     return x, residual_history

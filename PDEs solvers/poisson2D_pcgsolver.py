@@ -122,10 +122,10 @@ def pcg_poisson2D(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix,
 
 
 def jacobi_preconditioner(A: sparse.csr_matrix) -> sparse.csr_matrix:
-   
-    N = A.shape[0]
-    diag = A.diagonal()
-    return sparse.diags(1.0 / diag, format='csr')
+    
+    nparray = np.ones(A.shape[0])
+  
+    return sparse.diags(1.0 / nparray, format='csr')
 
 
 def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, **precond_kwargs) -> Dict: 
@@ -148,19 +148,19 @@ def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
     fig = plt.figure(figsize=(15, 8))
     
     # Solution surface plot
-    ax1 = fig.add_subplot(121)
+    ax1 = fig.add_subplot(121, projection='3d')
     x = np.linspace(0, 2, nx)
     y = np.linspace(0, 1, ny)
     X, Y = np.meshgrid(x, y)
     
     first_method = list(results.keys())[0]
-    cont = ax1.pcolor(X, Y, results[first_method]['solution'],
-                           cmap='viridis')
+    surf = ax1.plot_surface(X, Y, results[first_method]['solution'],
+                           cmap='viridis', edgecolor='none', alpha=0.8)
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
 
     ax1.set_title('Solution Surface')
-    fig.colorbar(cont, ax=ax1)
+    fig.colorbar(surf, ax=ax1)
 
     # Convergence history plot
     ax2 = fig.add_subplot(122)
@@ -184,12 +184,19 @@ if __name__ == "__main__":
     # Problem setup
     start_time = time.time()
     print("Setting up problem...")
-    nx, ny = 100, 100
+    nx, ny = 1000, 1000
+
     xmin, xmax = 0, 2
     ymin, ymax = 0, 1
     dx = (xmax - xmin) / (nx - 1)
     dy = (ymax - ymin) / (ny - 1)
-    
+
+    print("*====================================*")
+    print("*=====  Grid size: N = (",(nx, ny),") ======*" )
+    print("*=====  Step size: ",[dx]," ===========*" )
+    print("*====================================*")
+
+
     # Create source term (same as original problem)
     b = np.zeros(nx * ny)
     b[ny//4 * nx + nx//4] = 100
@@ -200,11 +207,9 @@ if __name__ == "__main__":
     A = poisson2D_matrix(nx, ny, dx, dy)
     results = {
         'Jacobi': solver(A, b, nx, ny, jacobi_preconditioner),
-        'SSOR': solver(A, b, nx, ny, SSOR_preconditioner, omega=1.0),
-        'ILU': solver(A, b, nx, ny, ilu_preconditioner, drop_tol=0.01)
     }
     exec_time = time.time() - start_time
     # Plot comparisons
-    plot_comparison(results, nx, ny)
+    #plot_comparison(results, nx, ny)
     exec_time = time.time() - start_time
     print("execution finished in", exec_time)

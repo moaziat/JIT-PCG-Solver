@@ -9,6 +9,20 @@ from conjugate_gradient import cg
 
 
 
+
+
+"""
+======= IMPORTANT =====================
+
+The 2D Poisson equation is: ∂²p/∂x² + ∂²p/∂y² = b
+I followed this course for discretization of this equation
+Please check the following link:
+https://lorenabarba.com/blog/cfd-python-12-steps-to-navier-stokes/
+    
+"""
+
+
+
 def poisson2D_matrix(nx: int, ny: int, dx: float, dy: float) -> sparse.csr_matrix: 
 
     '''
@@ -34,16 +48,6 @@ def poisson2D_matrix(nx: int, ny: int, dx: float, dy: float) -> sparse.csr_matri
 
     return A
 
-
-
-def boundary_conditions(p: np.ndarray, ny: int, nx: int) -> np.ndarray: 
-
-    p[0:ny*nx:nx] = 0  
-    p[nx-1:ny*nx:nx] = 0  
-    p[0:nx] = 0  
-    p[-nx:] = 0  
-    return p
-
 def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, **precond_kwargs) -> Dict:
 
     M = precond_func(A, **precond_kwargs)
@@ -60,16 +64,65 @@ def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, 
 
 def jacobi_preconditioner(A: sparse.csr_matrix) -> np.ndarray :
    return np.ones(A.shape[0])
+
+def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
+    fig = plt.figure(figsize=(15, 8))
+    
+    # Solution surface plot
+    ax1 = fig.add_subplot(121, projection='3d')
+    x = np.linspace(0, 2, nx)
+    y = np.linspace(0, 1, ny)
+    X, Y = np.meshgrid(x, y)
+    
+    first_method = list(results.keys())[0]
+    surf = ax1.plot_surface(X, Y, results[first_method]['solution'],
+                           cmap='viridis', edgecolor='none', alpha=0.8)
+    ax1.set_xlabel('x')
+    ax1.set_ylabel('y')
+
+    ax1.set_title('Solution Surface')
+    fig.colorbar(surf, ax=ax1)
+
+    # Convergence history plot
+    ax2 = fig.add_subplot(122)
+    styles = ['-', '--', ':', '-.']
+    colors = ['b', 'r', 'g', 'm']
+    
+    for (method, data), style, color in zip(results.items(), styles, colors):
+        ax2.semilogy(data['history'], linestyle=style, color=color, linewidth=2,
+                     label=f"{method}\n({len(data['history'])} iter, {data['time']:.3f}s)")
+    
+    ax2.set_xlabel('Iteration')
+    ax2.set_ylabel('Residual Norm')
+    ax2.set_title('Convergence History Comparison')
+    ax2.grid(True, which="both", ls="-", alpha=0.2)
+    ax2.legend()
+    
+    plt.tight_layout()
+    plt.show()
+
 if __name__ =="__main__":
     
     start_time = time.time()
     print("Setting up problem...")
-    nx, ny = 500, 500
+    nx, ny = 1000, 1000
+
+    
     xmin, xmax = 0, 2
     ymin, ymax = 0, 1
     dx = (xmax - xmin) / (nx - 1)
     dy = (ymax - ymin) / (ny - 1)
-    
+
+
+    print("*====================================*")
+    print("*=====  Grid size: N = (",Tuple(nx, ny)")======*" )
+    print("*=====  Step size: ",[dx]," ===========*" )
+    print("*====================================*")
+
+
+
+
+
     # Create source term (same as original problem)
     b = np.zeros(nx * ny)
     b[ny//4 * nx + nx//4] = 100
@@ -83,5 +136,8 @@ if __name__ =="__main__":
     }
     exec_time = time.time() - start_time
     # Plot comparisons
+   # plot_comparison(results, nx, ny)
+
     exec_time = time.time() - start_time
+    
     print("execution finished in", exec_time)
