@@ -105,7 +105,7 @@ if __name__ =="__main__":
     
     start_time = time.time()
     print("Setting up problem...")
-    nx, ny = 1000, 1000
+    nx, ny = 5000, 5000
 
     
     xmin, xmax = 0, 2
@@ -115,7 +115,7 @@ if __name__ =="__main__":
 
 
     print("*====================================*")
-    print("*=====  Grid size: N = (",Tuple(nx, ny)")======*" )
+    print("*=====  Grid size: N = (",(nx, ny),")======*" )
     print("*=====  Step size: ",[dx]," ===========*" )
     print("*====================================*")
 
@@ -136,7 +136,7 @@ if __name__ =="__main__":
     }
     exec_time = time.time() - start_time
     # Plot comparisons
-   # plot_comparison(results, nx, ny)
+    plot_comparison(results, nx, ny)
 
     exec_time = time.time() - start_time
     
