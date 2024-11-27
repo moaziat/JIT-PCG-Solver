@@ -4,15 +4,15 @@ from scipy import sparse
 from numba import jit, njit, prange
 import time
 
-@njit(parallel=True)
+@njit
 def dot_product(v1: np.ndarray, v2: np.ndarray) -> int: 
     return np.sum(v1 * v2)
 
-@njit(parallel=True)
+@njit
 def norm(v: np.ndarray) -> int: 
     return np.sqrt(np.sum(v * v))
 
-@njit(parallel=True)
+@njit
 def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.ndarray) -> np.ndarray: 
     '''
     indptr maps the elements of data and indices to the rows of the sparse matrix
@@ -20,15 +20,18 @@ def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.
 
     n = len(indptr) - 1
     Ax = np.zeros(n)
-    row_sum = 0
+    
     for i in prange(n): 
+        row_sum = 0
         for j in range(indptr[i], indptr[i+1]): 
             row_sum += data[j] * x[indices[j]]
         Ax[i] = row_sum
     return Ax 
 
 
-@njit(Parallel=True)
+
+
+@njit
 def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
    
     n = len(A_indptr) - 1
@@ -47,10 +50,8 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
     rz = dot_product(r, z)
     
     ini_residual_norm = norm(r)
-    residual_history = [ini_residual_norm]
-
-    start_time = time.time()
-
+    residual_history = [float(ini_residual_norm)]
+    eps = 1e-15
     for i in range(max_iter): 
       
 
@@ -58,6 +59,9 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
 
         pAp = dot_product(p, Ap)
         
+        if abs(pAp) < eps: 
+            break 
+
         alpha = rz / pAp
 
         x +=  alpha * p 
@@ -74,26 +78,13 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
 
         #update search direction 
         rz_new = dot_product(r, z)
+        if abs(rz) < eps:
+            break
         beta = rz_new / rz 
         p = z + beta * p 
         rz = rz_new
 
+
       
-    solve_time = time.time() - start_time
-    print(f"solve time: {solve_time} seconds")
-    return x, residual_history, solve_time
+    return x, residual_history
 
-#def sparse_cg(A: sparse.csr_matrix, 
-              b: np.ndarray,
-              M: sparse.csr_matrix,
-              ny: int, nx: int,
-              max_iter: int = 20000,
-              tol: float = 1e-10) -> tuple:
-   
-
-    return cg(A.data, A.indices, A.indptr,
-             b,
-             M.diagonal(),  # For Jacobi preconditioner, we only need diagonal
-             ny, nx,
-             max_iter,
-             tol)

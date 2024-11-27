@@ -2,9 +2,9 @@ import numpy as np
 from numba import njit, prange 
 from scipy import sparse 
 
-def jacobi_preconditioner(A: sparse.csr_matrix) -> sparse.csr_matrix:
+def jacobi_preconditioner(A: sparse.csr_matrix) -> np.ndarray:
    
-    return sparse.diags(1.0 / A.diagonal(), format='csr')
+    return sparse.diags(1.0 / A.diagonal())
 
 def SSOR_preconditioner(A: sparse.csr_matrix, omega: float=1.0) -> sparse.csc_matrix: 
 
