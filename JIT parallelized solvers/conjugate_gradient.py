@@ -38,7 +38,6 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
 
     #initial guess
     x = np.zeros(n)
-
     #initial residual 
     r = b - matvec_mul(A_value, A_i, A_indptr, x)
 
@@ -83,8 +82,7 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
         beta = rz_new / rz 
         p = z + beta * p 
         rz = rz_new
-
+        
 
       
     return x, residual_history
-

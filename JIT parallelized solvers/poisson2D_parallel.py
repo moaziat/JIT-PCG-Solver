@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from typing import Tuple, List, Dict
 import time 
 from scipy.sparse.linalg import spilu 
-
+from conjugate_gradient import cg 
 
 
 
@@ -34,23 +34,7 @@ def poisson2D_matrix(nx: int, ny: int, dx: float, dy: float) -> sparse.csr_matri
 
     return A
 
-def jacobi_preconditioner(A: sparse.csr_matrix) -> sparse.csr_matrix:
-   
-    return sparse.diags(1.0 / A.diagonal(), format='csr')
 
-def SSOR_preconditioner(A: sparse.csr_matrix, omega: float=1.0) -> sparse.csc_matrix: 
-
-    D = sparse.diags(A.diagonal(), format='csr')
-    L = sparse.tril(A, k=-1, format='csr') 
-    D_inv = sparse.diags(1.0/A.diagonal(), format='csr')
-    M = (1.0 / (2.0-omega)) * (D/omega + L) @ D_inv @ (D/omega + L.T)
-    return M
-
-def ilu_preconditioner(A: sparse.csr_matrix, drop_tol: float = 0.01) -> sparse.csr_matrix:
-    ilu = spilu(A, drop_tol=drop_tol)
-    N = A.shape[0]
-    M = sparse.linalg.LinearOperator((N, N), matvec=ilu.solve)
-    return M
 
 def boundary_conditions(p: np.ndarray, ny: int, nx: int) -> np.ndarray: 
 
@@ -60,54 +44,44 @@ def boundary_conditions(p: np.ndarray, ny: int, nx: int) -> np.ndarray:
     p[-nx:] = 0  
     return p
 
-def pcg_poisson2D(A: sparse.csr_matrix, b: np.ndarray, M: sparse.csr_matrix,
-                   ny: int, nx: int, max_iter: int = 20000, tol: float = 1e-10) -> Tuple[np.ndarray, List[float], float]:
-    
-    #initial guess x0 (here we use x as a notation)
-    x = np.zeros(A.shape[0])
+def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, **precond_kwargs) -> Dict:
 
-    #inital residual r0 = b - Ax0
-    r = b - A @ x 
-
-    #preconditioner
-    z = M @ r
-    p = z.copy()
-
-   
-    
-    # Initial residual norm
-    rz = r.dot(z)
-    initial_residual_norm = np.sqrt(r.dot(r))
-    
-    residual_history = [initial_residual_norm]
+    M = precond_func(A, **precond_kwargs)
     start_time = time.time()
-
-    for i in range(max_iter):
-        x = boundary_conditions(x, ny, nx)
-        Ap = A @ p
-        alpha = rz / p.dot(Ap)
-        
-        x = x + alpha * p
-        r = r - alpha * Ap
-        
-        residual_norm = np.sqrt(r.dot(r))
-        residual_history.append(residual_norm)
-        
-        relative_residual = residual_norm / initial_residual_norm
-        if relative_residual < tol:
-            break
-            
-        z = M @ r
-        rz_new = r.dot(z)
-        beta = rz_new / rz
-        
-        p = z + beta * p
-        rz = rz_new
-        
-        # Enforce boundary conditions
-        x = boundary_conditions(x, ny, nx)
-    
+    x, hist = cg(A.data, A.indices, A.indptr, b, M, nx, ny)
     solve_time = time.time() - start_time
-    print("solve time", solve_time)
-    return x, residual_history, solve_time
+    results = {
+        'solution':  x.reshape(ny, nx),
+        'history': hist, 
+        'time' : solve_time
+    }
 
+    return results
+
+def jacobi_preconditioner(A: sparse.csr_matrix) -> np.ndarray :
+   return np.ones(A.shape[0])
+if __name__ =="__main__":
+    
+    start_time = time.time()
+    print("Setting up problem...")
+    nx, ny = 500, 500
+    xmin, xmax = 0, 2
+    ymin, ymax = 0, 1
+    dx = (xmax - xmin) / (nx - 1)
+    dy = (ymax - ymin) / (ny - 1)
+    
+    # Create source term (same as original problem)
+    b = np.zeros(nx * ny)
+    b[ny//4 * nx + nx//4] = 100
+    b[3*ny//4 * nx + 3*nx//4] = -100
+    
+    # Solve with different methods
+    # Solve with different preconditioners
+    A = poisson2D_matrix(nx, ny, dx, dy)
+    results = {
+        'Jacobi': solver(A, b, nx, ny, jacobi_preconditioner),
+    }
+    exec_time = time.time() - start_time
+    # Plot comparisons
+    exec_time = time.time() - start_time
+    print("execution finished in", exec_time)
