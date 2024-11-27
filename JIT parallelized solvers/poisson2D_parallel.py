@@ -105,7 +105,7 @@ if __name__ =="__main__":
     
     start_time = time.time()
     print("Setting up problem...")
-    nx, ny = 5000, 5000
+    nx, ny = 500, 500
 
     
     xmin, xmax = 0, 2
@@ -115,8 +115,8 @@ if __name__ =="__main__":
 
 
     print("*====================================*")
-    print("*=====  Grid size: N = (",(nx, ny),")======*" )
-    print("*=====  Step size: ",[dx]," ===========*" )
+    print("*=====  Grid size: N = ",(nx, ny),"==*" )
+    print("*=====  Step size: ",[dx]," =========*" )
     print("*====================================*")
 
 

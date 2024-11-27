@@ -159,7 +159,7 @@ def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
     ax1.set_xlabel('x')
     ax1.set_ylabel('y')
 
-    ax1.set_title('Solution Surface')
+    ax1.set_title('Solution surface')
     fig.colorbar(surf, ax=ax1)
 
     # Convergence history plot
@@ -192,8 +192,8 @@ if __name__ == "__main__":
     dy = (ymax - ymin) / (ny - 1)
 
     print("*====================================*")
-    print("*=====  Grid size: N = (",(nx, ny),") ======*" )
-    print("*=====  Step size: ",[dx]," ===========*" )
+    print("*=====  Grid size: N = ",(nx, ny),"==*" )
+    print("*=====  Step size: ",[dx]," =========*" )
     print("*====================================*")
 
 
@@ -210,6 +210,6 @@ if __name__ == "__main__":
     }
     exec_time = time.time() - start_time
     # Plot comparisons
-    #plot_comparison(results, nx, ny)
+    plot_comparison(results, nx, ny)
     exec_time = time.time() - start_time
     print("execution finished in", exec_time)
