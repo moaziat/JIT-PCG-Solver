@@ -7,7 +7,7 @@ For example here we are trying to solve 2D poisson ![equation](https://latex.cod
 
 With centered finite difference method we discretize the equation into a sparse matrix problem, which is solved iteratively.
 
-2- We use a JIT compiled PCG using Numba to accelerate computations on CPU. (may extend it to GPU acceleration in the near future).
+2- We use a JIT compiled PCG using Numba to accelerate computations on CPU ```@nojit(Parallel=True)```. (may extend it to GPU acceleration in the near future).
 
 To clone this repository: 
 ```bash
