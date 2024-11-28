@@ -6,7 +6,7 @@ from typing import Tuple, List, Dict
 import time 
 from scipy.sparse.linalg import spilu 
 from conjugate_gradient import cg 
-
+from preconditioners import jacobi_preconditioner
 
 
 
@@ -50,7 +50,7 @@ def poisson2D_matrix(nx: int, ny: int, dx: float, dy: float) -> sparse.csr_matri
 
 def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, **precond_kwargs) -> Dict:
 
-    M = precond_func(A, **precond_kwargs)
+    M = precond_func(A.data, A.indices, A.indptr, **precond_kwargs)
     start_time = time.time()
     x, hist = cg(A.data, A.indices, A.indptr, b, M, nx, ny)
     solve_time = time.time() - start_time
@@ -62,8 +62,6 @@ def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, 
 
     return results
 
-def jacobi_preconditioner(A: sparse.csr_matrix) -> np.ndarray :
-   return np.ones(A.shape[0])
 
 def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
     fig = plt.figure(figsize=(15, 8))

@@ -4,6 +4,8 @@ from scipy import sparse
 from numba import jit, njit, prange
 import time
 from boundary_conditions import poisson2d_bc
+from preconditioners import apply_preconditioner
+
 
 @njit(parallel=True)
 def dot_product(v1: np.ndarray, v2: np.ndarray) -> int: 
@@ -46,7 +48,7 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
 
     #Apply preconditioner
     
-    z = M_data * r
+    z = apply_preconditioner(M_data, r)
     p = z.copy()
     #initial values
     rz = dot_product(r, z)
