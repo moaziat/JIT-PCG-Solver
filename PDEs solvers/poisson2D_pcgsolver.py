@@ -184,7 +184,7 @@ if __name__ == "__main__":
     # Problem setup
     start_time = time.time()
     print("Setting up problem...")
-    nx, ny = 1000, 1000
+    nx, ny = 500, 500
 
     xmin, xmax = 0, 2
     ymin, ymax = 0, 1

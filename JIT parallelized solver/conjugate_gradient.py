@@ -36,7 +36,7 @@ def matvec_mul(data: np.ndarray, indices: np.ndarray, indptr: np.ndarray, x: np.
 
 @njit(parallel=True)
 
-def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 20000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
+def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray, M_data: np.ndarray, ny: int, nx: int, max_iter: int = 200000, tol: float=1e-10) -> Tuple[np.ndarray, List[float], float]: 
    
     n = len(A_indptr) - 1
 

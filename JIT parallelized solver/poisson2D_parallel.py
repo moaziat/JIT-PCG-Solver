@@ -6,7 +6,7 @@ from typing import Tuple, List, Dict
 import time 
 from scipy.sparse.linalg import spilu 
 from conjugate_gradient import cg 
-from preconditioners import jacobi_preconditioner
+from preconditioners import jacobi_preconditioner, ssor_preconditioner, block_jacobi_2d
 
 
 
@@ -111,7 +111,6 @@ if __name__ =="__main__":
     dx = (xmax - xmin) / (nx - 1)
     dy = (ymax - ymin) / (ny - 1)
 
-
     print("*====================================*")
     print("*=====  Grid size: N = ",(nx, ny),"==*" )
     print("*=====  Step size: ",[dx]," =========*" )
@@ -131,7 +130,10 @@ if __name__ =="__main__":
     A = poisson2D_matrix(nx, ny, dx, dy)
     results = {
         'Jacobi': solver(A, b, nx, ny, jacobi_preconditioner),
-    }
+        'SSOR': solver(A, b, nx, ny, ssor_preconditioner),
+        'Block jacobi': solver(A, b, nx, ny, block_jacobi_2d),
+    
+    }   
     exec_time = time.time() - start_time
     # Plot comparisons
     plot_comparison(results, nx, ny)
