@@ -7,8 +7,7 @@ import time
 from scipy.sparse.linalg import spilu 
 from conjugate_gradient import cg 
 from preconditioners import jacobi_preconditioner, ssor_preconditioner, block_jacobi_2d
-
-
+from numba import jit
 
 
 """
@@ -54,6 +53,7 @@ def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, 
     start_time = time.time()
     x, hist = cg(A.data, A.indices, A.indptr, b, M, nx, ny)
     solve_time = time.time() - start_time
+    print("solved in:", solve_time, "seconds")
     results = {
         'solution':  x.reshape(ny, nx),
         'history': hist, 
