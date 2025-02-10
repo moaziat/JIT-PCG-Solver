@@ -8,11 +8,11 @@ from preconditioners import apply_preconditioner
 
 
 @njit(parallel=True)
-def dot_product(v1: np.ndarray, v2: np.ndarray) -> int: 
+def dot_product(v1: np.ndarray, v2: np.ndarray) -> float: 
     return np.sum(v1 * v2)
 
 @njit(parallel=True)
-def norm(v: np.ndarray) -> int: 
+def norm(v: np.ndarray) -> float: 
     return np.sqrt(np.sum(v * v))
 
 @njit(parallel=True)
@@ -47,16 +47,16 @@ def cg(A_value: np.ndarray, A_i: np.ndarray, A_indptr: np.ndarray, b: np.ndarray
     r = b - matvec_mul(A_value, A_i, A_indptr, x)
 
     #Apply preconditioner
-    
     z = apply_preconditioner(M_data, r)
     p = z.copy()
+
     #initial values
     rz = dot_product(r, z)
     
     ini_residual_norm = norm(r)
     residual_history = [float(ini_residual_norm)]
     eps = 1e-15
-    for i in range(max_iter): 
+    for i in prange(max_iter): 
       
 
         Ap = matvec_mul(A_value, A_i, A_indptr, p)

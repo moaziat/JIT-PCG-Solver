@@ -59,7 +59,6 @@ def solver(A: sparse.csr_matrix, b: np.ndarray, nx: int, ny: int, precond_func, 
         'history': hist, 
         'time' : solve_time
     }
-
     return results
 
 
@@ -98,6 +97,8 @@ def plot_comparison(results: Dict[str, Dict], nx: int, ny: int):
     
     plt.tight_layout()
     plt.show()
+
+
 
 if __name__ =="__main__":
     
